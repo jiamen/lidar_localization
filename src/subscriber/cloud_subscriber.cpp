@@ -14,7 +14,9 @@ CloudSubscriber::CloudSubscriber(ros::NodeHandle& nh, std::string topic_name, si
     subscriber_ = nh_.subscribe(topic_name, buff_size, &CloudSubscriber::msg_callback, this);
 }
 
-void CloudSubscriber::msg_callback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg_ptr) {
+// 将ros中传感器类型的数据sensor_msgs转换为pcl数据
+void CloudSubscriber::msg_callback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg_ptr)
+{
     CloudData cloud_data;
     cloud_data.time = cloud_msg_ptr->header.stamp.toSec();
     pcl::fromROSMsg(*cloud_msg_ptr, *(cloud_data.cloud_ptr));

@@ -1,5 +1,5 @@
 /*
- * @Description: 
+ * @Description: gnss(GPS)传感器数据结构
  * @Author: Ren Qian
  * @Date: 2020-02-06 20:42:23
  */
@@ -7,15 +7,25 @@
 
 #include "glog/logging.h"
 
-//静态成员变量必须在类外初始化
-bool lidar_localization::GNSSData::origin_position_inited = false;
+// 静态成员变量必须在类外初始化
+double lidar_localization::GNSSData::origin_longitude = 0.0;
+double lidar_localization::GNSSData::origin_latitude  = 0.0;
+double lidar_localization::GNSSData::origin_altitude  = 0.0;
+bool   lidar_localization::GNSSData::origin_position_inited = false;
 GeographicLib::LocalCartesian lidar_localization::GNSSData::geo_converter;
+
 
 namespace lidar_localization
 {
+
 void GNSSData::InitOriginPosition()
 {
     geo_converter.Reset(latitude, longitude, altitude);
+
+    origin_longitude = longitude;
+    origin_latitude = latitude;
+    origin_altitude = altitude;
+
     origin_position_inited = true;
 }
 
@@ -28,22 +38,28 @@ void GNSSData::UpdateXYZ()
     geo_converter.Forward(latitude, longitude, altitude, local_E, local_N, local_U);
 }
 
-bool GNSSData::SyncData(std::deque<GNSSData>& UnsyncedData, std::deque<GNSSData>& SyncedData, double sync_time) {
+bool GNSSData::SyncData(std::deque<GNSSData>& UnsyncedData, std::deque<GNSSData>& SyncedData, double sync_time)
+{
     // 传感器数据按时间序列排列，在传感器数据中为同步的时间点找到合适的时间位置
     // 即找到与同步时间相邻的左右两个数据
     // 需要注意的是，如果左右相邻数据有一个离同步时间差值比较大，则说明数据有丢失，时间离得太远不适合做差值
-    while (UnsyncedData.size() >= 2) {
+    while (UnsyncedData.size() >= 2)
+    {
         if (UnsyncedData.front().time > sync_time)
             return false;
-        if (UnsyncedData.at(1).time < sync_time) {
+        if (UnsyncedData.at(1).time < sync_time)
+        {
             UnsyncedData.pop_front();
             continue;
         }
-        if (sync_time - UnsyncedData.front().time > 0.2) {
+        if (sync_time - UnsyncedData.front().time > 0.2)
+        {
             UnsyncedData.pop_front();
             return false;
         }
-        if (UnsyncedData.at(1).time - sync_time > 0.2) {
+        if (UnsyncedData.at(1).time - sync_time > 0.2)
+        {
+            UnsyncedData.pop_front();
             return false;
         }
         break;

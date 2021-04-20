@@ -33,9 +33,11 @@ void IMUSubscriber::msg_callback(const sensor_msgs::ImuConstPtr& imu_msg_ptr) {
     new_imu_data_.push_back(imu_data);
 }
 
-void IMUSubscriber::ParseData(std::deque<IMUData>& imu_data_buff) {
-    if (new_imu_data_.size() > 0) {
-        imu_data_buff.insert(imu_data_buff.end(), new_imu_data_.begin(), new_imu_data_.end());
+void IMUSubscriber::ParseData(std::deque<IMUData>& deque_imu_data)
+{
+    if (new_imu_data_.size() > 0)
+    {
+        deque_imu_data.insert(deque_imu_data.end(), new_imu_data_.begin(), new_imu_data_.end());
         new_imu_data_.clear();
     }
 }

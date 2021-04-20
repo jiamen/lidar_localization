@@ -8,25 +8,68 @@
 #include <boost/filesystem.hpp>
 #include "glog/logging.h"
 
-namespace lidar_localization {
-bool FileManager::CreateFile(std::ofstream& ofs, std::string file_path) {
-    ofs.open(file_path.c_str(), std::ios::app);
-    if (!ofs) {
-        LOG(WARNING) << "无法生成文件: " << file_path;
+namespace lidar_localization
+{
+
+bool FileManager::CreateFile(std::ofstream& ofs, std::string file_path)
+{
+    ofs.close();
+    boost::filesystem::remove(file_path.c_str());
+
+    ofs.open(file_path.c_str(), std::ios::out);
+    // in(input)：文件打开读取。
+    // out（output）：文件打开输入。
+    // ate（at end）：输出的位置在文件的结尾。
+    // app（append）：所有的输出操作发生在文件末尾。追加到其现有内容。
+    // trunc（truncate）：文件打开之前存在的任何内容都将被丢弃。
+    if (!ofs)
+    {
+        LOG(WARNING) << "无法生成文件: " << std::endl << file_path << std::endl << std::endl;
         return false;
     }
-
     return true;
 }
 
-bool FileManager::CreateDirectory(std::string directory_path) {
-    if (!boost::filesystem::is_directory(directory_path)) {
+bool FileManager::InitDirectory(std::string directory_path, std::string use_for)
+{
+    if ( boost::filesystem::is_directory(directory_path) )
+    {
+        boost::filesystem::remove_all(directory_path);
+    }
+    return CreateDirectory(directory_path,use_for);
+}
+
+
+bool FileManager::CreateDirectory(std::string directory_path)
+{
+    if (!boost::filesystem::is_directory(directory_path))
+    {
         boost::filesystem::create_directory(directory_path);
     }
-    if (!boost::filesystem::is_directory(directory_path)) {
-        LOG(WARNING) << "无法建立文件夹: " << directory_path;
+    if (!boost::filesystem::is_directory(directory_path))
+    {
+        LOG(WARNING) << "无法建立文件夹: " << std::endl << directory_path << std::endl << std::endl;
         return false;
     }
     return true;
 }
+
+bool FileManager::CreateDirectory(std::string directory_path, std::string use_for)
+{
+    if (!boost::filesystem::is_directory(directory_path))
+    {
+        boost::filesystem::is_directory(directory_path);
+    }
+    if (!boost::filesystem::is_directory(directory_path))
+    {
+        LOG(WARNING) << "无法创建文件夹: " << std::endl << directory_path << std::endl << std::endl;
+        return false;
+    }
+
+    std::cout << use_for << "存放地址: " << std::endl << directory_path << std::endl << std::endl;
+    return true;
+}
+
+
+
 }

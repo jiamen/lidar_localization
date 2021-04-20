@@ -14,18 +14,23 @@ bool VelocityData::SyncData(std::deque<VelocityData>& UnsyncedData, std::deque<V
     // 传感器数据按时间序列排列，在传感器数据中为同步的时间点找到合适的时间位置
     // 即找到与同步时间相邻的左右两个数据
     // 需要注意的是，如果左右相邻数据有一个离同步时间差值比较大，则说明数据有丢失，时间离得太远不适合做差值
-    while (UnsyncedData.size() >= 2) {
+    while (UnsyncedData.size() >= 2)
+    {
         if (UnsyncedData.front().time > sync_time)
             return false;
-        if (UnsyncedData.at(1).time < sync_time) {
+        if (UnsyncedData.at(1).time < sync_time)
+        {
             UnsyncedData.pop_front();
             continue;
         }
-        if (sync_time - UnsyncedData.front().time > 0.2) {
+        if (sync_time - UnsyncedData.front().time > 0.2)
+        {
             UnsyncedData.pop_front();
             return false;
         }
-        if (UnsyncedData.at(1).time - sync_time > 0.2) {
+        if (UnsyncedData.at(1).time - sync_time > 0.2)
+        {
+            UnsyncedData.pop_front();
             return false;
         }
         break;
@@ -51,4 +56,38 @@ bool VelocityData::SyncData(std::deque<VelocityData>& UnsyncedData, std::deque<V
 
     return true;
 }
+
+                                                    // transform_matrix = lidar_to_imu.inverse()
+void VelocityData::TransformCoordinate(Eigen::Matrix4f transform_matrix)
+{
+    Eigen::Matrix4d matrix = transform_matrix.cast<double>();         // float类型转为double类型
+    Eigen::Matrix3d t_R = matrix.block<3,3>(0,0);   // 注意，这里也是double类型
+    Eigen::Vector3d w(angular_velocity.x, angular_velocity.y, angular_velocity.z);  // w_imu角速度
+    Eigen::Vector3d v(linear_velocity.x, linear_velocity.y, linear_velocity.z);     // v_imu线速度
+
+    // w1=R * w0
+    // v1=R * v0 + w1^t (叉乘)   其中 △v=w1×t=w1^t
+    w = t_R * w;
+    v = t_R * v;    // v_lidar 的前半部分
+
+    //             | 0   -w2  w1 |  |t0|
+    // △v = w1×t = | w2   0  -w0 |  |t1|
+    //             | -w1  w0  0  |  |t2|
+
+    Eigen::Vector3d r(matrix(0,3), matrix(1,3), matrix(2,3));   // t_l
+    Eigen::Vector3d delta_v;
+    delta_v(0) = w(1) * r(2) - w(2) * r(1);
+    delta_v(1) = w(2) * r(0) - w(0) * r(2);
+    delta_v(2) = w(0) * r(1) - w(1) * r(0);
+    v = v + delta_v;
+
+    // lidar坐标系下的角速度和线速度
+    angular_velocity.x = w(0);
+    angular_velocity.y = w(1);
+    angular_velocity.z = w(2);
+    linear_velocity.x  = v(0);
+    linear_velocity.y  = v(1);
+    linear_velocity.z  = v(2);
+}
+
 }

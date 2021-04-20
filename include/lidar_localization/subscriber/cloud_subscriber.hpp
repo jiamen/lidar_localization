@@ -25,6 +25,7 @@ class CloudSubscriber {
     void ParseData(std::deque<CloudData>& deque_cloud_data);
 
   private:
+    // 将ros中传感器类型的数据sensor_msgs转换为pcl数据
     void msg_callback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg_ptr);
 
   private:
