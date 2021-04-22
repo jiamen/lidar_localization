@@ -2,7 +2,7 @@
 // Created by zlc on 2021/4/1.
 //
 
-#include "lidar_localization/front_end/front_end_flow.hpp"
+#include "lidar_localization/mapping/front_end/front_end_flow.hpp"
 
 #include "glog/logging.h"
 
@@ -21,9 +21,9 @@ namespace lidar_localization
         gnss_sub_ptr_ = std::make_shared<GNSSSubscriber>(nh, "/kitti/oxts/gps/fix", 1000000);
         lidar_to_imu_ptr_ = std::make_shared<TFListener>(nh, "imu_link", "velo_link");
 
-        cloud_pub_ptr_ = std::make_shared<CloudPublisher>(nh, "current_scan", 100, "/map");
-        local_map_pub_ptr_ = std::make_shared<CloudPublisher>(nh, "local_map", 100, "/map");
-        global_map_pub_ptr_ = std::make_shared<CloudPublisher>(nh, "global_map", 100, "/map");
+        cloud_pub_ptr_ = std::make_shared<CloudPublisher>(nh, "current_scan", "/map", 100);
+        local_map_pub_ptr_ = std::make_shared<CloudPublisher>(nh, "local_map", "/map", 100);
+        global_map_pub_ptr_ = std::make_shared<CloudPublisher>(nh, "global_map", "/map", 100);
         // 最后显示的两条轨迹就来自于这两个发布
         laser_odom_pub_ptr_ = std::make_shared<OdometryPublisher>(nh, "laser_odom", "map", "lidar", 100);
         gnss_pub_ptr_ = std::make_shared<OdometryPublisher>(nh, "gnss", "map", "lidar", 100);
@@ -73,126 +73,9 @@ namespace lidar_localization
         return true;
     }
 
-    bool FrontEndFlow::ReadData()
-    {
-        // 以点云数据的时间为准，进行其他三种数据同步
-        cloud_sub_ptr_->ParseData(cloud_data_buff_);
-
-        static std::deque<IMUData> unsynced_imu_;
-        static std::deque<VelocityData> unsynced_velocity_;
-        static std::deque<GNSSData> unsynced_gnss_;
-
-        imu_sub_ptr_->ParseData(unsynced_imu_);
-        velocity_sub_ptr_->ParseData(unsynced_velocity_);
-        gnss_sub_ptr_->ParseData(unsynced_gnss_);
-
-        // 点云队列中没有数据则直接返回false
-        if (0 == cloud_data_buff_.size())
-            return false;
-
-        // 点云队列中有数据则进行3种数据同步
-        double cloud_time = cloud_data_buff_.front().time;
-        bool valid_imu = IMUData::SyncData(unsynced_imu_, imu_data_buff_, cloud_time);
-        bool valid_velocity = VelocityData::SyncData(unsynced_velocity_, velocity_data_buff_, cloud_time);
-        bool valid_gnss = GNSSData::SyncData(unsynced_gnss_, gnss_data_buff_, cloud_time);
-
-        static bool sensor_inited = false;
-        if (!sensor_inited)
-        {
-            // 只要有gps，imu，轮速计velocity一个无效，
-            if (!valid_imu || !valid_velocity || !valid_gnss)
-            {
-                cloud_data_buff_.pop_front();
-                return false;
-            }
-            sensor_inited = true;
-        }
-
-        return true;
-    }
-
-    // 第2个调用函数：初始化校准，得到lidar_to_imu的变换矩阵，在里程计初始部分会使用到
-    bool FrontEndFlow::InitCalibration()
-    {
-        static bool calibration_received = false;
-
-        if (!calibration_received)
-        {
-            if (lidar_to_imu_ptr_->LookupData(lidar_to_imu_))
-            {
-                calibration_received = true;
-            }
-        }
-
-        return calibration_received;
-    }
-
-    // 第3个调用函数：初始化GPS, 设置gnss的原点
-    bool FrontEndFlow::InitGNSS()
-    {
-        static bool gnss_inited = false;
-
-        if (!gnss_inited)
-        {
-            GNSSData gnss_data = gnss_data_buff_.front();
-            gnss_data.InitOriginPosition();         // 初始化GPS, 设置gnss的原点
-            gnss_inited = true;
-        }
-
-        return gnss_inited;
-    }
 
 
-    // 第4个调用函数：判断4个数据队列中有误数据
-    bool FrontEndFlow::HasData()
-    {
-        if (0 == cloud_data_buff_.size())
-            return false;
 
-        if (0 == imu_data_buff_.size())
-            return false;
-
-        if (0 == gnss_data_buff_.size())
-            return false;
-
-        if (0 == velocity_data_buff_.size())
-            return false;
-
-        return true;
-    }
-
-
-    // 第5个调用函数：有数据的情况下，判断数据是否有效
-    // 判断当前取出的点云数据，imu数据，gnss数据是不是处于同一时刻，即对数据进行时间同步。
-    bool FrontEndFlow::ValidData()
-    {
-        current_cloud_data_ = cloud_data_buff_.front();
-        current_imu_data_ = imu_data_buff_.front();
-        current_velocity_data_ = velocity_data_buff_.front();
-        current_gnss_data_ = gnss_data_buff_.front();
-
-        double d_time = current_cloud_data_.time - current_imu_data_.time;
-        if (d_time < -0.05)
-        {
-            cloud_data_buff_.pop_front();
-            return false;
-        }
-        // 当点云的时间戳比imu的时间大的时候，说明当前的imu gnss数据时间早，则删除imu和gnss队列中的第一帧数据
-        if (d_time > 0.05)
-        {
-            imu_data_buff_.pop_front();
-            velocity_data_buff_.pop_front();
-            gnss_data_buff_.pop_front();
-            return false;
-        }
-
-        cloud_data_buff_.pop_front();
-        imu_data_buff_.pop_front();
-        velocity_data_buff_.pop_front();
-        gnss_data_buff_.pop_front();
-
-        return true;
-    }
 
 
 // 第6个调用函数：更新GPS里程计

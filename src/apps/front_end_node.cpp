@@ -10,23 +10,21 @@
 
 #include <lidar_localization/saveMap.h>
 #include "lidar_localization/global_defination/global_defination.h"
-#include "lidar_localization/front_end/front_end_flow.hpp"
+#include "lidar_localization/mapping/front_end/front_end_flow.hpp"
 
 
 using namespace lidar_localization;
 
 std::shared_ptr<FrontEndFlow> _front_end_flow_ptr;
 
-
-bool save_map_callback(saveMap::Request &request, saveMap::Response &response)
+// 自定义服务数据类型
+bool save_map_callback(saveMap::Request& request, saveMap::Response& response)
 {
     response.succeed = _front_end_flow_ptr->SaveMap();
     _front_end_flow_ptr->PublishGlobalMap();
     LOG(INFO) << "response.succeed: " << response.succeed;
     return response.succeed;
 }
-
-
 
 int main(int argc, char* *argv)
 {
@@ -41,7 +39,7 @@ int main(int argc, char* *argv)
     ros::init(argc, argv, "front_end_node");
     ros::NodeHandle nh;
 
-
+    // 创建一个名为save_map的server，注册回调函数save_map_callback()
     ros::ServiceServer service = nh.advertiseService("save_map", save_map_callback);
     _front_end_flow_ptr = std::make_shared<FrontEndFlow>(nh);
 
