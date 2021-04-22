@@ -67,6 +67,12 @@ bool ICPRegistration::ScanMatch(const CloudData::CLOUD_PTR& input_source,
     return true;
 }
 
+// pcl中的score定义是两份点云之间的误差（error），score越小表示匹配的越准；   √
+// ndt论文对score的定义是变换后点云的在相应网格的概率，概率越大表示越准，score越大。
+float ICPRegistration::GetFitnessScore()
+{
+    return icp_ptr_->getFitnessScore();
+}
 
 }
 

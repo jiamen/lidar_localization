@@ -1,9 +1,11 @@
 //
+// @Description: 发送闭环检测的相对位姿
 // Created by zlc on 2021/4/19.
 //
 
 #ifndef _LIDAR_LOCALIZATION_LOOP_POSE_PUBLISHER_HPP_
 #define _LIDAR_LOCALIZATION_LOOP_POSE_PUBLISHER_HPP_
+
 
 
 

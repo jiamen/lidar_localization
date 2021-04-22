@@ -8,6 +8,8 @@
 #define LIDAR_LOCALIZATION_SUBSCRIBER_CLOUD_SUBSCRIBER_HPP_
 
 #include <deque>
+#include <mutex>
+#include <thread>
 
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -17,23 +19,29 @@
 
 #include "lidar_localization/sensor_data/cloud_data.hpp"
 
-namespace lidar_localization {
-class CloudSubscriber {
-  public:
+namespace lidar_localization
+{
+
+class CloudSubscriber
+{
+public:
     CloudSubscriber(ros::NodeHandle& nh, std::string topic_name, size_t buff_size);
     CloudSubscriber() = default;
     void ParseData(std::deque<CloudData>& deque_cloud_data);
 
-  private:
+private:
     // 将ros中传感器类型的数据sensor_msgs转换为pcl数据
     void msg_callback(const sensor_msgs::PointCloud2::ConstPtr& cloud_msg_ptr);
 
-  private:
+private:
     ros::NodeHandle nh_;
     ros::Subscriber subscriber_;
 
     std::deque<CloudData> new_cloud_data_;
+
+    std::mutex buff_mutex_;
 };
+
 }
 
 #endif

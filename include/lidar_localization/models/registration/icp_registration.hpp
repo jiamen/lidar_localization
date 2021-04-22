@@ -24,10 +24,12 @@ public:
                    const Eigen::Matrix4f& predict_pose,
                    CloudData::CLOUD_PTR& result_cloud_ptr,
                    Eigen::Matrix4f& result_pose) override;
+    float GetFitnessScore() override;
 
 
 private:
     bool SetRegistrationParam(float max_dist, float trans_eps, float eculi_eps, int max_iter);
+
 
 private:
     pcl::IterativeClosestPoint<CloudData::POINT, CloudData::POINT>::Ptr icp_ptr_;

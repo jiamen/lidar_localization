@@ -31,22 +31,29 @@ public:
                    CloudData::CLOUD_PTR& result_cloud_ptr,
                    Eigen::Matrix4f& result_pose) override;
 
+    float GetFitnessScore() override;
+
 private:
     bool SetRegistrationParam(float max_correspond_dis, int max_iter);
     void calculateTrans(const CloudData::CLOUD_PTR& input_cloud);           // 计算变换矩阵
 
+    float GetFitnessScore(float max_range);
+
 private:
-    CloudData::CLOUD_PTR target_cloud_;
+    CloudData::CLOUD_PTR target_cloud_;             // 目标点云
+    CloudData::CLOUD_PTR input_cloud_;              // 自己添加的输入待配准点云
+
     pcl::KdTreeFLANN<CloudData::POINT>::Ptr kdtree_ptr_;
 
     float max_correspond_distance_;     // 阈值
-    int max_iterator_;                  // 最大迭代次数
+    int  max_iterator_;                  // 最大迭代次数
 
 
     Eigen::Matrix3f rotation_matrix_;   // 旋转矩阵
     Eigen::Vector3f translation_;       // 平移矩阵
     Eigen::Matrix4f transformation_;    // 接受初始的变换矩阵
 
+    double max_range_;                  // 得到最后的配准误差
 };
 
 }

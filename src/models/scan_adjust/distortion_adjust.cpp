@@ -77,6 +77,7 @@ bool DistortionAdjust::AdjustCloud(CloudData::CLOUD_PTR& input_cloud_ptr, CloudD
     return true;
 }
 
+
 Eigen::Matrix3f DistortionAdjust::UpdateMatrix(float real_time)
 {
     // 角度=角速度*运行时间

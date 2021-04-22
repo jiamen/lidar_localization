@@ -3,16 +3,19 @@
  * @Author: Ren Qian
  * @Date: 2020-02-08 21:25:11
  */
-#ifndef LIDAR_LOCALIZATION_MODELS_REGISTRATION_INTERFACE_HPP_
-#define LIDAR_LOCALIZATION_MODELS_REGISTRATION_INTERFACE_HPP_
+#ifndef _LIDAR_LOCALIZATION_MODELS_REGISTRATION_INTERFACE_HPP_
+#define _LIDAR_LOCALIZATION_MODELS_REGISTRATION_INTERFACE_HPP_
 
 #include <yaml-cpp/yaml.h>
 #include <Eigen/Dense>
 #include "lidar_localization/sensor_data/cloud_data.hpp"
 
-namespace lidar_localization {
-class RegistrationInterface {
-  public:
+namespace lidar_localization
+{
+
+class RegistrationInterface
+{
+public:
     virtual ~RegistrationInterface() = default;
 
     virtual bool SetInputTarget(const CloudData::CLOUD_PTR& input_target) = 0;
@@ -20,7 +23,10 @@ class RegistrationInterface {
                            const Eigen::Matrix4f& predict_pose,
                            CloudData::CLOUD_PTR& result_cloud_ptr,
                            Eigen::Matrix4f& result_pose) = 0;
+
+    virtual float GetFitnessScore() = 0;
 };
-} 
+
+}
 
 #endif

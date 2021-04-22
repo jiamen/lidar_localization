@@ -13,10 +13,8 @@
 #include <yaml-cpp/yaml.h>
 
 #include "lidar_localization/sensor_data/cloud_data.hpp"
-#include "lidar_localization/models/registration/ndt_registration.hpp"
-#include "lidar_localization/models/registration/icp_registration.hpp"
-#include "lidar_localization/models/registration/icp_registration_manual.hpp"
-#include "lidar_localization/models/cloud_filter/voxel_filter.hpp"
+#include "lidar_localization/models/registration/registration_interface.hpp"
+#include "lidar_localization/models/cloud_filter/cloud_filter_interface.hpp"
 
 
 namespace lidar_localization
@@ -25,28 +23,23 @@ namespace lidar_localization
 class FrontEnd
 {
 public:
+    // 帧结构体
     struct Frame
     {
-        Eigen::Matrix4f pose = Eigen::Matrix4f::Identity();
-        CloudData cloud_data;
+        Eigen::Matrix4f pose = Eigen::Matrix4f::Identity();     // 当前帧位姿（map下的）
+        CloudData cloud_data;                                   // 点云
     };
 
 public:
     FrontEnd();
 
-    bool InitWithConfig();
     bool Update(const CloudData& cloud_data, Eigen::Matrix4f& cloud_pose);
     bool SetInitPose(const Eigen::Matrix4f& init_pose);     // 设置初始位姿
 
-    bool SaveMap();
-    bool GetNewLocalMap(CloudData::CLOUD_PTR& local_map_ptr);
-    bool GetNewGlobalMap(CloudData::CLOUD_PTR& global_map_ptr);
-    bool GetCurrentScan(CloudData::CLOUD_PTR& current_scan_ptr);
-
 
 private:
+    bool InitWithConfig();
     bool InitParam(const YAML::Node& config_node);
-    bool InitDataPath(const YAML::Node& config_node);
     bool InitRegistration(std::shared_ptr<RegistrationInterface>& registration_ptr, const YAML::Node& config_node);
     bool InitFilter(std::string filter_user, std::shared_ptr<CloudFilterInterface>& filter_ptr, const YAML::Node& config_node);
 
@@ -58,20 +51,12 @@ private:
 
     std::shared_ptr<CloudFilterInterface> frame_filter_ptr_;
     std::shared_ptr<CloudFilterInterface> local_map_filter_ptr_;
-    std::shared_ptr<CloudFilterInterface> display_filter_ptr_;
     std::shared_ptr<RegistrationInterface> registration_ptr_;
 
     std::deque<Frame> local_map_frames_;            // 局部地图帧
-    std::deque<Frame> global_map_frames_;           // 全局地图帧
-
-    bool has_new_local_map_ = false;
-    bool has_new_global_map_ = false;
 
     CloudData::CLOUD_PTR local_map_ptr_;            // 局部地图指针
-    CloudData::CLOUD_PTR global_map_ptr_;           // 全局地图指针
-    CloudData::CLOUD_PTR result_cloud_ptr_;         // 结果点云
-
-    Frame current_frame_;
+    Frame current_frame_;                           // 当前帧
 
     // 初始位姿和预测位姿都初始化为单位阵
     Eigen::Matrix4f init_pose_    = Eigen::Matrix4f::Identity();
@@ -82,8 +67,5 @@ private:
 };
 
 }
-
-
-
 
 #endif // _LIDAR_LOCALIZATION_FRONT_END_HPP_
